@@ -20,7 +20,6 @@ export const DogsPhotos = ({ selectRazas }) => {
   //Esta funciona obtiene las fotos de los perros.
   const getPhotos = () => {
     if (selectRazas != null && selectRazas.length > 0) {
-      console.log("ke paza");
       setLoadData(false);
       setPhotosDogs([]);
       let contador = 20;
@@ -36,7 +35,6 @@ export const DogsPhotos = ({ selectRazas }) => {
         });
       } while (i < contador);
       setLoadData(true);
-      console.log(photosDogs);
     } else {
       setLoadData(false);
       getPhotosService().then((data) => {

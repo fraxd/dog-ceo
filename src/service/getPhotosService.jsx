@@ -1,4 +1,3 @@
-import React from "react";
 import {razasApi} from '../api/razasApi'
 
 export const getPhotosService = async () =>{

@@ -2,22 +2,20 @@ import React, { useEffect, useState, useRef } from "react";
 import { razasApi } from "../api/razasApi";
 import { MultiSelect } from "primereact/multiselect";
 import { InputText } from "primereact/inputtext";
+import { GetRazasServices } from "../service/getRazasService";
 
 export const SelecionarRaza = ({ selectRazas, setSelectRazas }) => {
   // Se estableces todas las variables que se van a utilizar.
   const [razasOrdenadas, setRazasOrdenadas] = useState([]); // Almacena las razas de la API ORDENADAS Y ADAPTADAS para el MultiSelect.
   const [filterValue, setFilterValue] = useState(""); // Almacena el valor del filtro.
   const filterInputRef = useRef(); // Referencia al input del filtro.
-  const [statusOrder, setStatusOrder] = useState(false); // Almacena el estado de la ordenación de las razas.
   useEffect(() => {
-    getRazas();
-  }, []);
-  const getRazas = async () => {
-    const resp = await razasApi.get("/breeds/list/all").then((resp) => {
-      ordernarRazas(Object.entries(resp.data.message));
+    GetRazasServices().then((resp) => {
+      ordernarRazas(resp);
     });
-  };
+  }, []);
 
+  // Funcion que ordena las razas de la API para que sean compatibles con el MultiSelect.
   const ordernarRazas = (resp) => {
     resp.map((raza) => {
       let resultado = {
@@ -40,10 +38,9 @@ export const SelecionarRaza = ({ selectRazas, setSelectRazas }) => {
       }
       setRazasOrdenadas((razasOrdenadas) => [...razasOrdenadas, resultado]);
     });
-    console.log("terminao");
-    setStatusOrder(true);
   };
 
+  // Funcion que retorna el template del filtro.
   const filterTemplate = (options) => {
     let { filterOptions } = options;
 
@@ -58,7 +55,7 @@ export const SelecionarRaza = ({ selectRazas, setSelectRazas }) => {
       </div>
     );
   };
-
+  //Funcion que filtra las razas.
   const myFilterFunction = (event, options) => {
     let _filterValue = event.target.value;
     setFilterValue(_filterValue);
@@ -66,28 +63,26 @@ export const SelecionarRaza = ({ selectRazas, setSelectRazas }) => {
   };
 
   // const [selectRazas, setSelectRazas] = React.useState(null);
-  if (!statusOrder) return <div className="mt-5">Cargando...</div>;
-  else {
-    return (
-      <div className="mt-5">
-        {
-          <MultiSelect
-            value={selectRazas}
-            options={razasOrdenadas}
-            onChange={(e) => {
-              setSelectRazas(e.value);
-              console.log(selectRazas);
-            }}
-            optionLabel="label"
-            optionGroupLabel="label"
-            optionGroupChildren="items"
-            placeholder="Seleciona Raza"
-            filter
-            filterTemplate={filterTemplate}
-            maxSelectedLabels={3}
-          />
-        }
-      </div>
-    );
-  }
+
+  return (
+    <div className="mt-12">
+      {
+        <MultiSelect
+          value={selectRazas}
+          options={razasOrdenadas}
+          onChange={(e) => {
+            setSelectRazas(e.value);
+            console.log(selectRazas);
+          }}
+          optionLabel="label"
+          optionGroupLabel="label"
+          optionGroupChildren="items"
+          placeholder="Seleciona Raza"
+          filter
+          filterTemplate={filterTemplate}
+          maxSelectedLabels={3}
+        />
+      }
+    </div>
+  );
 };
