@@ -1,110 +1,79 @@
-import React, { useState, useRef, useEffect } from "react";
-import { getPhotosService } from "../service/getPhotosService";
-import { DataView, DataViewLayoutOptions } from 'primereact/dataview';
+import React, { useState, useEffect } from "react";
+import {
+  getPhotosService,
+  getPhotosRazaService,
+} from "../service/getPhotosService";
+import { Image } from "primereact/image";
+import { Button } from "primereact/button";
+import { ProgressSpinner } from "primereact/progressspinner";
 
-export const DogsPhotos = () => {
-  const [products, setProducts] = useState(null);
-  const [layout, setLayout] = useState("grid");
-  const [loading, setLoading] = useState(true);
-  const [first, setFirst] = useState(0);
-  const [totalRecords, setTotalRecords] = useState(0);
-  const [sortOrder, setSortOrder] = useState(null);
-  const [sortField, setSortField] = useState(null);
+import "../css/dogs-photos.css";
 
-  const rows = useRef(6);
-  const datasource = useRef(null);
-  const isMounted = useRef(false);
+export const DogsPhotos = ({ selectRazas }) => {
+  const [photosDogs, setPhotosDogs] = useState([]);
+  const [loadData, setLoadData] = useState(false);
 
   useEffect(() => {
-    setTimeout(() => {
-      isMounted.current = true; 
-        getPhotosService().then((data) => {
-            datasource.current = data;
-            setTotalRecords(data.length);
-            setProducts(datasource.current.slice(0, rows.current));
-            setLoading(false);
-        })
-    }, 1000);
-  }, []); //
-  const onPage = (event) => {
-    setLoading(true);
-    //imitate delay of a backend call
-    setTimeout(() => {
-      const startIndex = event.first;
-      const endIndex = Math.min(event.first + rows.current, totalRecords - 1);
-      const newProducts =
-        startIndex === endIndex
-          ? datasource.current.slice(startIndex)
-          : datasource.current.slice(startIndex, endIndex);
-      setFirst(startIndex);
-      setProducts(newProducts);
-      setLoading(false);
-    }, 1000);
-  };
-  const renderListItem = (data) => {
-    return (
-      <div className="col-12">
-        <div className="flex flex-column align-items-center p-3 w-full md:flex-row">
-          <img
-            className="md:w-11rem w-9 shadow-2 md:my-0 md:mr-5 mr-0 my-5"
-            src={`${data}`}
-            alt={data.name}
-          />
-          <div className="text-center md:text-left md:flex-1">
-            <div className="text-2xl font-bold">{data.name}</div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-  const renderGridItem = (data) => {
-    let nombreRaza = data.split("/");
-    return (
-      <div className="col-12 md:col-4">
-        <div className="m-2 border-1 surface-border card">
-          <div className="text-center">
-            <img
-              className="w-9 my-5 shadow-3"
-              src={`${data}`}
-              alt={nombreRaza[4]}
-            />
-            <div className="text-2xl font-bold"><b>{nombreRaza[4]}</b></div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-  const itemTemplate = (product, layout) => {
-    if (!product) {
-      return;
-    }
-    if (layout === "list") return renderListItem(product);
-    else if (layout === "grid") return renderGridItem(product);
-  };
-  const renderHeader = () => {
-    let onOptionChange = (e) => {
-      setLoading(true);
-      setLayout(e.value);
-    };
-    return (
-      <div style={{ textAlign: "left" }}>
-        <DataViewLayoutOptions layout={layout} onChange={onOptionChange} />
-      </div>
-    );
-  };
-  const header = renderHeader();
+    getPhotos();
+  }, [selectRazas]);
 
-  return (
-    <div className="card dataview-demo">
-      <DataView
-        value={products}
-        layout={layout}
-        itemTemplate={itemTemplate}
-        paginator
-        rows={9}
-        sortOrder={sortOrder}
-        sortField={sortField}
-      />
-    </div>
-  );
+  //Esta funciona obtiene las fotos de los perros.
+  const getPhotos = () => {
+    if (selectRazas != null && selectRazas.length > 0) {
+      console.log("ke paza");
+      setLoadData(false);
+      setPhotosDogs([]);
+      let contador = 20;
+      if (selectRazas.length > 20) contador = selectRazas.length;
+      // La idea de este for es ir solicitando photos de perros hasta obtener por lo menos 20 fotos.
+      let i = 0;
+      do {
+        selectRazas.map((raza) => {
+          i++;
+          getPhotosRazaService((raza = { raza })).then((data) => {
+            setPhotosDogs((photosDogs) => [...photosDogs, data]);
+          });
+        });
+      } while (i < contador);
+      setLoadData(true);
+      console.log(photosDogs);
+    } else {
+      setLoadData(false);
+      getPhotosService().then((data) => {
+        setPhotosDogs(data);
+        setLoadData(true);
+      });
+    }
+  };
+
+  if (!loadData) {
+    return (
+      <div>
+        <ProgressSpinner />
+        <p>Loading Data...</p>
+      </div>
+    );
+  } else {
+    return (
+      <>
+        <div className="gallery">
+          {photosDogs.map((photo, index) => {
+            return (
+              <div key={index} className="pics">
+                <Image src={photo} alt="Image" width="330" preview />
+              </div>
+            );
+          })}
+        </div>
+        <br />
+        <Button
+          label="¿Nuevas Fotos?"
+          className="p-button-rounded p-button-secondary boton"
+          onClick={() => {
+            getPhotos();
+          }}
+        />
+      </>
+    );
+  }
 };
